@@ -15,6 +15,7 @@ final class ShoppingItem {
     
     var list: ShoppingList?
     
+    // Initializes the item with it's data, including default values
     init(name: String, addedAt: Date = Date(), isChecked: Bool = false, checkedAt: Date? = nil) {
         self.name = name
         self.addedAt = addedAt

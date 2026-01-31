@@ -107,7 +107,8 @@ struct ShoppingListDetailView: View {
             ShoppingItemFormView(item: item, shoppingList: shoppingList)
         }
     }
-
+    
+    // Handles the delete of a shopping item from a list
     private func deleteItem(_ item: ShoppingItem) {
         withAnimation {
             modelContext.delete(item)

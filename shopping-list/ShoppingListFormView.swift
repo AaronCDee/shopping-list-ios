@@ -47,6 +47,7 @@ struct ShoppingListFormView: View {
         }
     }
     
+    // Save function to create or update a list
     private func save() {
         if let shoppingList {
             // Edit existing list

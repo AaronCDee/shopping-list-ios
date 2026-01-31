@@ -16,6 +16,7 @@ final class ShoppingList {
     @Relationship(deleteRule: .cascade, inverse: \ShoppingItem.list)
     var items: [ShoppingItem] = []
     
+    // Initializes the item with it's data, including default values
     init(name: String, createdAt: Date = Date()) {
         self.name      = name
         self.createdAt = createdAt

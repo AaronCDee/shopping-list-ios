@@ -18,6 +18,7 @@ struct ShoppingItemFormView: View {
     var item: ShoppingItem?
     var shoppingList: ShoppingList
     
+    // Initialize the view with the item to create or edit
     init(item: ShoppingItem? = nil, shoppingList: ShoppingList) {
         self.item = item
         self.shoppingList = shoppingList
@@ -72,6 +73,7 @@ struct ShoppingItemFormView: View {
         }
     }
     
+    // Saves an item to a list
     private func saveItem() {
         if let item = item {
             // Edit existing item
@@ -84,6 +86,7 @@ struct ShoppingItemFormView: View {
         }
     }
     
+    // Deletes an item from a list
     private func deleteItem() {
         guard let item = item else { return }
         modelContext.delete(item)
