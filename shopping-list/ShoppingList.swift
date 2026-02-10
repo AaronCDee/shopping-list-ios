@@ -12,6 +12,9 @@ import SwiftData
 final class ShoppingList {
     var name: String
     var createdAt: Date
+    var firestoreId: String?
+    var lastSyncedAt: Date?
+    var ownerId: String?
     
     @Relationship(deleteRule: .cascade, inverse: \ShoppingItem.list)
     var items: [ShoppingItem] = []
@@ -20,5 +23,14 @@ final class ShoppingList {
     init(name: String, createdAt: Date = Date()) {
         self.name      = name
         self.createdAt = createdAt
+    }
+    
+    func toFirestoreData() -> [String: Any] {
+        [
+            "name":       name,
+            "createdAt": createdAt,
+            "ownerId": ownerId ?? "",
+            "items": items.map { $0.toFirestoreData() }
+        ]
     }
 }

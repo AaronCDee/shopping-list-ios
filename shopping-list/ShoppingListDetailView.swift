@@ -11,6 +11,7 @@ import SwiftData
 struct ShoppingListDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let shoppingList: ShoppingList
+    let syncService: FirestoreSyncService
     
     @State private var showingAddSheet = false
     @State private var itemToEdit: ShoppingItem?
@@ -22,7 +23,6 @@ struct ShoppingListDetailView: View {
     var body: some View {
         Group {
             if items.isEmpty {
-                // Empty state
                 VStack(spacing: 20) {
                     Image(systemName: "cart")
                         .font(.system(size: 60))
@@ -42,15 +42,17 @@ struct ShoppingListDetailView: View {
                     }
                 }
             } else {
-                // List with items
                 List {
                     ForEach(items) { item in
                         HStack {
-                            // Checkbox
                             Button(action: {
                                 withAnimation {
                                     item.isChecked.toggle()
                                     item.checkedAt = item.isChecked ? Date() : nil
+                                }
+                                // Sync checked state
+                                Task {
+                                    try? await syncService.sync(shoppingList)
                                 }
                             }) {
                                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
@@ -59,7 +61,6 @@ struct ShoppingListDetailView: View {
                             }
                             .buttonStyle(.plain)
                             
-                            // Item details
                             VStack(alignment: .leading) {
                                 Text(item.name)
                                     .font(.headline)
@@ -101,17 +102,21 @@ struct ShoppingListDetailView: View {
             }
         }
         .sheet(isPresented: $showingAddSheet) {
-            ShoppingItemFormView(shoppingList: shoppingList)
+            ShoppingItemFormView(shoppingList: shoppingList, syncService: syncService)
         }
         .sheet(item: $itemToEdit) { item in
-            ShoppingItemFormView(item: item, shoppingList: shoppingList)
+            ShoppingItemFormView(item: item, shoppingList: shoppingList, syncService: syncService)
         }
     }
     
-    // Handles the delete of a shopping item from a list
     private func deleteItem(_ item: ShoppingItem) {
         withAnimation {
             modelContext.delete(item)
+        }
+        
+        Task {
+            try? modelContext.save()
+            try? await syncService.sync(shoppingList)
         }
     }
 }
@@ -124,7 +129,10 @@ struct ShoppingListDetailView: View {
     container.mainContext.insert(list)
     
     return NavigationStack {
-        ShoppingListDetailView(shoppingList: list)
-            .modelContainer(container)
+        ShoppingListDetailView(
+            shoppingList: list,
+            syncService: FirestoreSyncService(authService: AuthService())
+        )
+        .modelContainer(container)
     }
 }

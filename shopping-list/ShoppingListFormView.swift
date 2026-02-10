@@ -13,11 +13,15 @@ struct ShoppingListFormView: View {
     @Environment(\.dismiss) private var dismiss
     
     let shoppingList: ShoppingList?
+    let authService: AuthService
+    let syncService: FirestoreSyncService
     
     @State private var name: String = ""
     
-    init(shoppingList: ShoppingList? = nil) {
+    init(shoppingList: ShoppingList? = nil, authService: AuthService, syncService: FirestoreSyncService) {
         self.shoppingList = shoppingList
+        self.authService = authService
+        self.syncService = syncService
         _name = State(initialValue: shoppingList?.name ?? "")
     }
     
@@ -47,15 +51,26 @@ struct ShoppingListFormView: View {
         }
     }
     
-    // Save function to create or update a list
     private func save() {
+        let listToSync: ShoppingList
+        
         if let shoppingList {
-            // Edit existing list
             shoppingList.name = name
+            listToSync = shoppingList
         } else {
-            // Create new list
             let newList = ShoppingList(name: name)
+            newList.ownerId = authService.userId
             modelContext.insert(newList)
+            listToSync = newList
+        }
+        
+        // Sync to Firestore in the background
+        Task {
+            do {
+                try await syncService.sync(listToSync)
+            } catch {
+                print("Firestore sync failed: \(error.localizedDescription)")
+            }
         }
         
         dismiss()
@@ -63,6 +78,9 @@ struct ShoppingListFormView: View {
 }
 
 #Preview {
-    ShoppingListFormView()
-        .modelContainer(for: ShoppingList.self, inMemory: true)
+    ShoppingListFormView(
+        authService: AuthService(),
+        syncService: FirestoreSyncService(authService: AuthService())
+    )
+    .modelContainer(for: ShoppingList.self, inMemory: true)
 }

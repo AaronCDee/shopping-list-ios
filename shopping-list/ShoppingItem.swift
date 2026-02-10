@@ -12,6 +12,7 @@ final class ShoppingItem {
     var addedAt: Date
     var isChecked: Bool
     var checkedAt: Date?
+    var firestoreId: String?
     
     var list: ShoppingList?
     
@@ -21,5 +22,14 @@ final class ShoppingItem {
         self.addedAt = addedAt
         self.isChecked = isChecked
         self.checkedAt = checkedAt
+    }
+    
+    func toFirestoreData() -> [String: Any] {
+        [
+            "name": name,
+            "addedAt": addedAt.timeIntervalSince1970,
+            "isChecked": isChecked,
+            "checkedAt": checkedAt?.timeIntervalSince1970
+        ]
     }
 }

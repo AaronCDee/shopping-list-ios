@@ -14,12 +14,14 @@ struct ContentView: View {
     
     @State private var showingAddSheet = false
     @State private var listToEdit: ShoppingList?
+    
+    let authService: AuthService
+    let syncService: FirestoreSyncService
 
     var body: some View {
         NavigationSplitView {
             Group {
                 if shoppingLists.isEmpty {
-                    // Empty state
                     VStack(spacing: 20) {
                         Image(systemName: "list.clipboard")
                             .font(.system(size: 60))
@@ -39,11 +41,13 @@ struct ContentView: View {
                         }
                     }
                 } else {
-                    // List of shopping lists
                     List {
                         ForEach(shoppingLists) { list in
                             NavigationLink {
-                                ShoppingListDetailView(shoppingList: list)
+                                ShoppingListDetailView(
+                                    shoppingList: list,
+                                    syncService: syncService
+                                )
                             } label: {
                                 ShoppingListRow(shoppingList: list)
                             }
@@ -72,7 +76,7 @@ struct ContentView: View {
                         .font(.headline)
                 }
                 
-                if !shoppingLists.isEmpty { // Only show add btn in toolbar if there are lists
+                if !shoppingLists.isEmpty {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: { showingAddSheet = true }) {
                             Label("Add List", systemImage: "plus")
@@ -81,10 +85,23 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showingAddSheet) {
-                ShoppingListFormView()
+                ShoppingListFormView(
+                    authService: authService,
+                    syncService: syncService
+                )
             }
             .sheet(item: $listToEdit) { list in
-                ShoppingListFormView(shoppingList: list)
+                ShoppingListFormView(
+                    shoppingList: list,
+                    authService: authService,
+                    syncService: syncService
+                )
+            }
+            .task {
+                // Ensure user is signed in on appear
+                if !authService.isSignedIn {
+                    try? await authService.signInAnonymously()
+                }
             }
         } detail: {
             Text("Select a shopping list")
@@ -92,6 +109,15 @@ struct ContentView: View {
     }
 
     private func deleteList(_ list: ShoppingList) {
+        // Delete from Firestore first
+        Task {
+            do {
+                try await syncService.delete(list)
+            } catch {
+                print("Firestore delete failed: \(error.localizedDescription)")
+            }
+        }
+        
         withAnimation {
             modelContext.delete(list)
         }
@@ -137,6 +163,9 @@ struct ShoppingListRow: View {
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: ShoppingList.self, inMemory: true)
+    ContentView(
+        authService: AuthService(),
+        syncService: FirestoreSyncService(authService: AuthService())
+    )
+    .modelContainer(for: ShoppingList.self, inMemory: true)
 }

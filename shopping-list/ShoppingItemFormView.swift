@@ -17,11 +17,12 @@ struct ShoppingItemFormView: View {
     
     var item: ShoppingItem?
     var shoppingList: ShoppingList
+    let syncService: FirestoreSyncService
     
-    // Initialize the view with the item to create or edit
-    init(item: ShoppingItem? = nil, shoppingList: ShoppingList) {
+    init(item: ShoppingItem? = nil, shoppingList: ShoppingList, syncService: FirestoreSyncService) {
         self.item = item
         self.shoppingList = shoppingList
+        self.syncService = syncService
         _name = State(initialValue: item?.name ?? "")
     }
     
@@ -73,23 +74,38 @@ struct ShoppingItemFormView: View {
         }
     }
     
-    // Saves an item to a list
     private func saveItem() {
         if let item = item {
-            // Edit existing item
             item.name = name
         } else {
-            // Create new item and associate with shopping list
             let newItem = ShoppingItem(name: name)
             newItem.list = shoppingList
             modelContext.insert(newItem)
         }
+        
+        // Sync the parent list (which includes items) to Firestore
+        Task {
+            do {
+                try await syncService.sync(shoppingList)
+            } catch {
+                print("Firestore sync failed: \(error.localizedDescription)")
+            }
+        }
     }
     
-    // Deletes an item from a list
     private func deleteItem() {
         guard let item = item else { return }
         modelContext.delete(item)
+        
+        // Sync the parent list after deletion
+        Task {
+            do {
+                try await syncService.sync(shoppingList)
+            } catch {
+                print("Firestore sync failed: \(error.localizedDescription)")
+            }
+        }
+        
         dismiss()
     }
 }
@@ -101,6 +117,9 @@ struct ShoppingItemFormView: View {
     let list = ShoppingList(name: "Groceries")
     container.mainContext.insert(list)
     
-    return ShoppingItemFormView(shoppingList: list)
-        .modelContainer(container)
+    return ShoppingItemFormView(
+        shoppingList: list,
+        syncService: FirestoreSyncService(authService: AuthService())
+    )
+    .modelContainer(container)
 }
