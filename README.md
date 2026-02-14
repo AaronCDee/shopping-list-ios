@@ -1,32 +1,54 @@
 # Overview
 
-A basic shopping list application that allows you to create and save lists, add items to those lists, and delete them.
-It also allows you to mark items as complete or incomplete.
+A shopping list application that asynchronously syncs data to the cloud to persist data between sessions on a user's device.
 
-I created this application in order to understand how to use SwiftUI to build user interfaces, as well as how IOS persists data.
+Purpose:
+To understand how cloud databases integrate into applications and specifically how they can allow for rapid prototyping.
 
-[Software Demo Video](https://www.loom.com/share/4820551a977841ebafc5f23f6c32c6e1)
+[Software Demo Video](https://www.loom.com/share/f2e2ed619fb04a6eae89663b2a52e09c)
+
+# Cloud Database
+
+Firebase Firestore
+
+Schema:
+
+ShoppingLists
+
+| attribute | type                  |
+| --------- | --------------------- |
+| name      | string                |
+| createdAt | timestamp             |
+| ownerId   | string                |
+| items     | array of ShoppingItem |
+
+ShoppingItem
+
+| attribute | type      |
+| --------- | --------- |
+| name      | string    |
+| addedAt   | timestamp |
+| isChecked | boolean   |
+| checkedAt | timestamp |
+
 
 # Development Environment
 
 ## Tools
-- MacOS
-- XCode
+* XCode
+* MacOS
 
-## Languages & Libs
-- Swift
-- SwiftUI
-- SwiftData
+## Language
+* Swift
+* SwiftUI
+* SwiftData
 
 # Useful Websites
 
-{Make a list of websites that you found helpful in this project}
-* [YouTube: How to make an app (Xcode 26) Full Tutorial](https://youtu.be/oRc4lLmvHyE?si=qAfJdGPY9--LUmp4)
-* [Introduction to SwiftData and SwiftUI](https://www.hackingwithswift.com/books/ios-swiftui/introduction-to-swiftdata-and-swiftui)
+- [Firebase documentation](https://firebase.google.com/docs/firestore)
+- [Firestore iOS codelab](https://firebase.google.com/codelabs/firestore-ios#0)
 
 # Future Work
 
-* Allow the user to add quantities
-* Allow the user to add pictures to items so that other users know what the item is.
-* Make the application multitenanted so that the data syncs to the cloud and is associated with a user
-
+- Explicit user authentication, rather than anonymous authentication
+- Better error handling, maybe adding a bug capturing service

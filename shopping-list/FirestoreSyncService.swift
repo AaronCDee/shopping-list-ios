@@ -17,13 +17,13 @@ final class FirestoreSyncService {
         self.authService = authService
     }
     
-    // MARK: - Shopping Lists
-    
+    // returns the collection for shopping lists
     private func userListsCollection() -> CollectionReference? {
         guard let uid = authService.userId else { return nil }
         return db.collection("users").document(uid).collection("shoppingLists")
     }
     
+    // syncs shopping list changes
     func sync(_ list: ShoppingList) async throws {
         guard let collection = userListsCollection() else {
             throw SyncError.notAuthenticated
@@ -43,12 +43,14 @@ final class FirestoreSyncService {
         list.lastSyncedAt = Date()
     }
     
+    // deletes a shopping list
     func delete(_ list: ShoppingList) async throws {
         guard let collection = userListsCollection(),
               let firestoreId = list.firestoreId else { return }
         try await collection.document(firestoreId).delete()
     }
     
+    // fetches all shopping lists for the given user
     func fetchAll() async throws -> [[String: Any]] {
         guard let collection = userListsCollection() else {
             throw SyncError.notAuthenticated
@@ -60,6 +62,7 @@ final class FirestoreSyncService {
             return data
         }
     }
+    
     
     enum SyncError: LocalizedError {
         case notAuthenticated
